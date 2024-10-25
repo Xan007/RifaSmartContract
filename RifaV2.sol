@@ -106,6 +106,20 @@ contract Rifa is VRFConsumerBaseV2Plus {
         estadoActual = RifaState.Comprando;
     }
 
+    function cancelarRifa() public payable ownerOnly {
+        for (uint256 i = 0; i < numerosComprados.length; ++i) {
+            uint256 numero = numerosComprados[i];
+
+            if (numero > 0 && numerosPorUsuario[numero] != address(0)) {
+                address payable usuario = payable(numerosPorUsuario[numero]);
+                (bool sent, ) = usuario.call{value: precioPorNumero}("");
+                require(sent, "Fallo al regresar ether a un participante");
+
+                numerosPorUsuario[numero] = address(0);
+            }
+        }
+    }
+
     function terminarRifa() public payable ownerOnly checkState(RifaState.NumeroGenerado) {
         ultimoGanador = numerosPorUsuario[numeroGanador];
         
