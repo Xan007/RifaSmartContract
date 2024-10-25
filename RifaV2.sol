@@ -74,8 +74,6 @@ contract Rifa is VRFConsumerBaseV2Plus {
         numeroGanador = uint256(randomWords[0] % numeroMaximo) + 1;
 
         estadoActual = RifaState.NumeroGenerado;
-
-        terminarRifa();
     }
 
     function generarGanador() public ownerOnly checkState(RifaState.Comprando) {
