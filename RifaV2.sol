@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
+/* 
+TODO: Añadir un metodo para cancelar la rifa
+por lo que se debe tener un registro de quienes pagaron
+y devolver el dinero a cada uno.
+*/
+
 import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
 import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 
@@ -193,7 +199,7 @@ contract Rifa is VRFConsumerBaseV2Plus {
     {
         require(numerosComprados.length <= numeroMaximo, "No se puede comprar, no hay numeros disponibles");
         require(
-            msg.value >= precioPorNumero,
+            msg.value == precioPorNumero * 1 wei, // TODO: VERIFICAR
             "Se requiere el precio correcto para comprar el numero"
         );
         require(!usuarioCompro[msg.sender], "Ya se compro un numero anteriormente");
