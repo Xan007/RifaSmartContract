@@ -75,6 +75,8 @@ contract Rifa is VRFConsumerBaseV2Plus {
     }
 
     function generarGanador() public ownerOnly checkState(RifaState.Comprando) {
+        require(numerosComprados.length == numeroMaximo, "Aun no se compran todos los numeros en la rifa");
+
         requestId = s_vrfCoordinator.requestRandomWords(
             VRFV2PlusClient.RandomWordsRequest({
                 keyHash: s_keyHash,
@@ -239,6 +241,10 @@ contract Rifa is VRFConsumerBaseV2Plus {
         }
 
         return result;
+    }
+
+    function getPrecioPorNumero() public view returns (uint256, string memory) {
+        return (precioPorNumero, "wei");
     }
 
     function getNumerosComprados() public view returns (uint256[] memory) {
