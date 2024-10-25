@@ -6,7 +6,7 @@ import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/V
 
 contract Rifa is VRFConsumerBaseV2Plus {
     // Segundos
-    uint256 constant TIEMPO_TURNO = 20;
+    uint256 constant TIEMPO_TURNO = 80;
 
     enum RifaState {
         Comprando,
