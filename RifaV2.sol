@@ -6,7 +6,7 @@ import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/V
 
 contract Rifa is VRFConsumerBaseV2Plus {
     // Segundos
-    uint256 constant TIEMPO_TURNO = 60;
+    uint256 constant TIEMPO_TURNO = 20;
 
     enum RifaState {
         Comprando,
@@ -138,10 +138,11 @@ contract Rifa is VRFConsumerBaseV2Plus {
 
     // Añadir un usuario a la cola
     function hacerFila() public checkState(RifaState.Comprando) returns (uint256) {
+        actualizarCola();
+        
         require(!usuarioEnCola[msg.sender], "Ya se encuentra en cola");
         require(!usuarioCompro[msg.sender], "Ya se compro un numero anteriormente");
-
-        actualizarCola();
+        require(numerosComprados.length < numeroMaximo, "No se puede hacer fila, no hay numeros disponibles");
 
         last++;
         colaCompra[last] = msg.sender;
@@ -167,6 +168,8 @@ contract Rifa is VRFConsumerBaseV2Plus {
 
                 if (first <= last) {
                     actualizarTurno(colaCompra[first]);
+                } else {
+                    ultimoTurnoTime = 0;
                 }
 
                 return true;
@@ -188,11 +191,13 @@ contract Rifa is VRFConsumerBaseV2Plus {
         public payable
         checkState(RifaState.Comprando)
     {
+        require(numerosComprados.length <= numeroMaximo, "No se puede comprar, no hay numeros disponibles");
         require(
             msg.value >= precioPorNumero,
             "Se requiere el precio correcto para comprar el numero"
         );
         require(!usuarioCompro[msg.sender], "Ya se compro un numero anteriormente");
+        actualizarCola();
         require(!locked, "Alguien se encuentra comprando, espere su turno.");
         require(first <= last, "No hay cola de compra. Primero haz fila");
         require(colaCompra[first] == msg.sender, "No te encuentras en el frente de la cola");
@@ -214,6 +219,23 @@ contract Rifa is VRFConsumerBaseV2Plus {
 
         locked = false;
     }
+
+    function getTiempoEsperaTurno(uint256 posicion) public view returns (uint256, uint256, string memory) {
+        if (posicion != 0) {
+            uint256 turnoEspera = (ultimoTurnoTime + TIEMPO_TURNO) + (TIEMPO_TURNO * (posicion - 1));
+            
+            if (turnoEspera >= block.timestamp) {
+                uint256 tiempoEspera = turnoEspera - block.timestamp;
+                uint256 minutos = tiempoEspera / 60;
+                uint256 segundos = tiempoEspera % 60;
+
+                return (minutos, segundos, "minutes, seconds");
+            }
+        }
+
+        return (0, 0, "minutes, seconds");
+    }
+
 
     function getColaCompra() public view returns (address[] memory) {
         address[] memory result;
