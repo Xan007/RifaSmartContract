@@ -45,8 +45,6 @@ contract Rifa is VRFConsumerBaseV2Plus {
     mapping(address => bool) usuarioEnCola;
     mapping(address => bool) usuarioCompro;
 
-    mapping(address => uint256) reembolsos;
-
     uint256 ultimoTurnoTime;
     address usuarioActual;
     uint256 public numeroGanador;
@@ -218,14 +216,6 @@ contract Rifa is VRFConsumerBaseV2Plus {
         reembolsos[msg.sender] -= precioPorNumero;
 
         locked = false;
-    }
-
-    function solicitarVueltas() public payable {
-        require(reembolsos[msg.sender] > 0, "No hay reembolsos disponibles");
-        require(address(this).balance >= reembolsos[msg.sender], "No es posible hacer el reembolso, saldo no disponible");
-
-        (bool sent, ) = msg.sender.call{value: reembolsos[msg.sender]}("");
-        require(sent, "Fallo el envio de Ether");
     }
 
     function getColaCompra() public view returns (address[] memory) {
