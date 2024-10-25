@@ -60,6 +60,8 @@ contract Rifa is VRFConsumerBaseV2Plus {
     event rifaTerminada(uint256 totalRecompensa, address ganador);
     event rifaComenzo(uint256 _precioPorNumero, uint256 _numeroMaximo);
 
+    event generadoNumeroGanador(uint256 _numeroGanador);
+
     event usuarioComproNumero(address indexed usuario, uint256 numeroComprado);
     event usuarioSiguiente(address indexed usuario);
     event turnoAsignado(address indexed usuario, uint256 posicion);
@@ -73,6 +75,7 @@ contract Rifa is VRFConsumerBaseV2Plus {
     function fulfillRandomWords(uint256, uint256[] calldata randomWords) internal override {
         numeroGanador = uint256(randomWords[0] % numeroMaximo) + 1;
 
+        emit generadoNumeroGanador(numeroGanador);
         estadoActual = RifaState.NumeroGenerado;
     }
 
