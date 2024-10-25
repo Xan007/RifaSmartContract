@@ -56,6 +56,10 @@ contract Rifa is VRFConsumerBaseV2Plus {
 
     bool locked;
 
+    event rifaCancelada();
+    event rifaTerminada(uint256 totalRecompensa, address ganador);
+    event rifaComenzo(uint256 _precioPorNumero, uint256 _numeroMaximo);
+
     event usuarioComproNumero(address indexed usuario, uint256 numeroComprado);
     event usuarioSiguiente(address indexed usuario);
     event turnoAsignado(address indexed usuario, uint256 posicion);
@@ -99,19 +103,33 @@ contract Rifa is VRFConsumerBaseV2Plus {
     {
         numeroMaximo = _numeroMaximo;
         precioPorNumero = _precioPorNumero;
+
+        emit rifaComenzo(precioPorNumero, numeroMaximo);
         estadoActual = RifaState.Comprando;
     }
 
-    function cancelarRifa() public payable ownerOnly checkState(RifaState.Comprando) {
+    function cancelarRifa() public payable ownerOnly noReentrancy checkState(RifaState.Comprando) {
+        estadoActual = RifaState.Terminada;
+
+        if (ultimoGanador != address(0)) {
+            emit rifaCancelada();
+        }
+
         for (uint256 i = 0; i < numerosComprados.length; ++i) {
             uint256 numero = numerosComprados[i];
+            address usuario = numerosPorUsuario[numero];
 
-            if (numero > 0 && numerosPorUsuario[numero] != address(0)) {
-                address payable usuario = payable(numerosPorUsuario[numero]);
-                (bool sent, ) = usuario.call{value: precioPorNumero}("");
-                require(sent, "Fallo al regresar ether a un participante");
+            if (numero > 0 && usuario != address(0)) {
+                if (precioPorNumero > 0) {
+                    address payable usuarioPagable = payable(numerosPorUsuario[numero]);
+                    (bool sent, ) = usuarioPagable.call{value: precioPorNumero}("");
+                    require(sent, "Fallo al regresar ether a un participante");
+                }
 
                 numerosPorUsuario[numero] = address(0);
+                usuarioPorNumero[usuario] = 0;
+                usuarioEnCola[usuario] = false;
+                usuarioCompro[usuario] = false;
             }
         }
 
@@ -119,11 +137,12 @@ contract Rifa is VRFConsumerBaseV2Plus {
         for (uint256 i = first; i <= last; i++) {
             address usuario = colaCompra[i];
             if (usuario != address(0)) {
-                usuarioPorNumero[usuario] = 0;
                 usuarioEnCola[usuario] = false;
                 usuarioCompro[usuario] = false;
             }
+            colaCompra[i] = address(0);
         }
+
         first = 1;
         last = 0;
         delete numerosComprados;
@@ -132,8 +151,6 @@ contract Rifa is VRFConsumerBaseV2Plus {
         locked = false;
         precioPorNumero = 0;
         numeroGanador = 0;
-
-        estadoActual = RifaState.Terminada;
     }
 
     function terminarRifa() public payable ownerOnly checkState(RifaState.NumeroGenerado) {
@@ -149,6 +166,8 @@ contract Rifa is VRFConsumerBaseV2Plus {
             address payable ganadorUsuario = payable(ultimoGanador);
             (bool sent, ) = ganadorUsuario.call{value: etherGanadoPorNumero}("");
             require(sent, "Fallo el envio de Ether a ganador");
+
+            emit rifaTerminada(etherGanadoPorNumero, ultimoGanador);
         }
 
         cancelarRifa();
