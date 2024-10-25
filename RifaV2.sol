@@ -188,7 +188,6 @@ contract Rifa is VRFConsumerBaseV2Plus {
         public payable
         checkState(RifaState.Comprando)
     {
-        reembolsos[msg.sender] += msg.value;
         require(
             msg.value >= precioPorNumero,
             "Se requiere el precio correcto para comprar el numero"
@@ -212,8 +211,6 @@ contract Rifa is VRFConsumerBaseV2Plus {
         emit usuarioComproNumero(msg.sender);
 
         actualizarCola();
-
-        reembolsos[msg.sender] -= precioPorNumero;
 
         locked = false;
     }
