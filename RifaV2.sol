@@ -27,7 +27,7 @@ contract Rifa is VRFConsumerBaseV2Plus {
     uint32 public numWords = 1;
 
     address ownerRifa;
-    uint256 public precioPorNumero;
+    uint256 precioPorNumero;
 
     // Cola de compra
     mapping(uint256 => address) colaCompra;
@@ -241,6 +241,10 @@ contract Rifa is VRFConsumerBaseV2Plus {
         }
 
         return result;
+    }
+
+    function getPrecioPorNumero() public view returns (uint256, string memory) {
+        return (precioPorNumero, "wei");
     }
 
     function getNumerosComprados() public view returns (uint256[] memory) {
