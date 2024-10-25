@@ -56,7 +56,7 @@ contract Rifa is VRFConsumerBaseV2Plus {
 
     bool locked;
 
-    event usuarioComproNumero(address indexed usuario);
+    event usuarioComproNumero(address indexed usuario, uint256 numeroComprado);
     event usuarioSiguiente(address indexed usuario);
     event turnoAsignado(address indexed usuario, uint256 posicion);
 
@@ -231,7 +231,7 @@ contract Rifa is VRFConsumerBaseV2Plus {
         usuarioCompro[msg.sender] = true;
         usuarioEnCola[msg.sender] = false;
 
-        emit usuarioComproNumero(msg.sender);
+        emit usuarioComproNumero(msg.sender, numeroSolicitado);
 
         actualizarCola();
 
