@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-/* 
-TODO: Añadir un metodo para cancelar la rifa
-por lo que se debe tener un registro de quienes pagaron
-y devolver el dinero a cada uno.
-*/
-
 import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
 import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 
@@ -76,6 +70,8 @@ contract Rifa is VRFConsumerBaseV2Plus {
         numeroGanador = uint256(randomWords[0] % numeroMaximo) + 1;
 
         estadoActual = RifaState.NumeroGenerado;
+
+        terminarRifa();
     }
 
     function generarGanador() public ownerOnly checkState(RifaState.Comprando) {
@@ -106,7 +102,7 @@ contract Rifa is VRFConsumerBaseV2Plus {
         estadoActual = RifaState.Comprando;
     }
 
-    function cancelarRifa() public payable ownerOnly {
+    function cancelarRifa() public payable ownerOnly checkState(RifaState.Comprando) {
         for (uint256 i = 0; i < numerosComprados.length; ++i) {
             uint256 numero = numerosComprados[i];
 
@@ -117,22 +113,6 @@ contract Rifa is VRFConsumerBaseV2Plus {
 
                 numerosPorUsuario[numero] = address(0);
             }
-        }
-    }
-
-    function terminarRifa() public payable ownerOnly checkState(RifaState.NumeroGenerado) {
-        ultimoGanador = numerosPorUsuario[numeroGanador];
-        
-        if (precioPorNumero > 0) {
-            uint256 totalRecaudado = address(this).balance;
-            require(totalRecaudado > 0, "No hay Ether para enviar");
-
-            uint256 etherGanadoPorNumero = precioPorNumero * (numeroMaximo);
-            require(totalRecaudado >= etherGanadoPorNumero, "No se tiene el suficiente ether para dar el premio");
-
-            address payable ganadorUsuario = payable(ultimoGanador);
-            (bool sent, ) = ganadorUsuario.call{value: etherGanadoPorNumero}("");
-            require(sent, "Fallo el envio de Ether a ganador");
         }
 
         // Limpiar la cola y datos de la rifa
@@ -154,6 +134,24 @@ contract Rifa is VRFConsumerBaseV2Plus {
         numeroGanador = 0;
 
         estadoActual = RifaState.Terminada;
+    }
+
+    function terminarRifa() public payable ownerOnly checkState(RifaState.NumeroGenerado) {
+        ultimoGanador = numerosPorUsuario[numeroGanador];
+        
+        if (precioPorNumero > 0) {
+            uint256 totalRecaudado = address(this).balance;
+            require(totalRecaudado > 0, "No hay Ether para enviar");
+
+            uint256 etherGanadoPorNumero = precioPorNumero * (numeroMaximo);
+            require(totalRecaudado >= etherGanadoPorNumero, "No se tiene el suficiente ether para dar el premio");
+
+            address payable ganadorUsuario = payable(ultimoGanador);
+            (bool sent, ) = ganadorUsuario.call{value: etherGanadoPorNumero}("");
+            require(sent, "Fallo el envio de Ether a ganador");
+        }
+
+        cancelarRifa();
     }
 
     // Añadir un usuario a la cola
